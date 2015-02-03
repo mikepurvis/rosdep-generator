@@ -1,0 +1,40 @@
+#!/usr/bin/env python
+
+import urllib2
+import yaml
+
+org = "ros"
+repo = "rosdistro"
+distro = "indigo"
+
+url = "https://github.com/%s/%s/raw/master/%s/distribution.yaml" % (org, repo, distro)
+
+print "Downloading: %s" % url
+response = urllib2.urlopen(url)
+response_text = response.read()
+print "Parsing %d bytes of yaml." % len(response_text)
+distribution = yaml.load(response_text)
+
+print "Extracting package names."
+platforms = distribution['release_platforms'].keys()
+packages = set()
+for name, meta in distribution['repositories'].iteritems():
+    if 'release' in meta:
+        if 'packages' in meta['release']:
+            packages.update(meta['release']['packages'])
+        else:
+            packages.add(name)
+
+output_yaml = {}
+print "Assembling output yaml structure."
+for package in packages:
+    output_yaml[package] = {}
+    for platform in platforms:
+        output_yaml[package][platform] = "ros-%s-%s" % (distro, package.replace("_", "-"))
+
+output_file = "%s-%s-%s.yaml" % (org, repo, distro)
+print "Outputting: %s" % output_file
+with open(output_file, "w") as f:
+    yaml.dump(output_yaml, f)
+
+print "Complete."
