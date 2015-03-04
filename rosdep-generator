@@ -1,13 +1,18 @@
 #!/usr/bin/env python
 
+import argparse
+import os
 import urllib2
 import yaml
 
-org = "ros"
-repo = "rosdistro"
-distro = "indigo"
+parser = argparse.ArgumentParser(description="Generate rosdep key mapping so that bloom can resolve dependencies for an overlaid rosdistro.")
+parser.add_argument("--org", default="ros", help="Github org from which to fetch rosdistro.")
+parser.add_argument("--repo", default="rosdistro", help="Github repo from which to fetch rosdistro.")
+parser.add_argument("--distro", default="indigo", help="Distro to generate for.")
+args = parser.parse_args()
 
-url = "https://github.com/%s/%s/raw/master/%s/distribution.yaml" % (org, repo, distro)
+url = "https://github.com/%s/%s/raw/master/%s/distribution.yaml" % \
+        (args.org, args.repo, args.distro)
 
 print "Downloading: %s" % url
 response = urllib2.urlopen(url)
@@ -30,11 +35,16 @@ print "Assembling output yaml structure."
 for package in packages:
     output_yaml[package] = {}
     for platform in platforms:
-        output_yaml[package][platform] = "ros-%s-%s" % (distro, package.replace("_", "-"))
+        output_yaml[package][platform] = "ros-%s-%s" % (args.distro, package.replace("_", "-"))
 
-output_file = "%s-%s-%s.yaml" % (org, repo, distro)
+output_file = "%s-%s-%s.yaml" % (args.org, args.repo, args.distro)
 print "Outputting: %s" % output_file
 with open(output_file, "w") as f:
     yaml.dump(output_yaml, f)
 
-print "Complete."
+print "Complete. Suggested next steps:"
+print
+print '  sudo sh -c \'echo "yaml file://%s/%s %s" > /etc/ros/rosdep/sources.list.d/90-%s-%s-%s.list\'' % \
+        (os.getcwd(), output_file, args.distro, args.org, args.repo, args.distro)
+print '  rosdep update'
+print
