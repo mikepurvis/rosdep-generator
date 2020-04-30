@@ -9,10 +9,14 @@ parser = argparse.ArgumentParser(description="Generate rosdep key mapping so tha
 parser.add_argument("--org", default="ros", help="Github org from which to fetch rosdistro.")
 parser.add_argument("--repo", default="rosdistro", help="Github repo from which to fetch rosdistro.")
 parser.add_argument("--distro", default="indigo", help="Distro to generate for.")
+parser.add_argument("--url", help="rosdistro to be used.")
 args = parser.parse_args()
 
-url = "https://github.com/%s/%s/raw/master/%s/distribution.yaml" % \
-        (args.org, args.repo, args.distro)
+if args.url:
+    url = args.url
+else:
+    url = "https://github.com/%s/%s/raw/master/%s/distribution.yaml" % \
+          (args.org, args.repo, args.distro)
 
 print "Downloading: %s" % url
 response = urllib2.urlopen(url)
